@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://db-portifolio:5432/${DB_NAME_PORTIFOLIO}
+    username: ${DB_USER_PORTIFOLIO}
+    password: ${DB_PASSWORD_PORTIFOLIO}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # Preserva os dados, apenas atualiza a estrutura
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect

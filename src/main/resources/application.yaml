@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: portifolio
+
+  profiles:
+    active: prod
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: antonioafj.edu@gmail.com
+    password: ${SENHA_EMAIL_PORTIFOLIO}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+api:
+  security:
+    token:
+      secret: ${JWT_SECRET:my-secret-key}
