@@ -18,11 +18,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Dar permissao ao Maven
-        run: chmod +x mvnw
-
+      # Mudamos de ./mvnw para apenas mvn
       - name: Build do JAR
-        run: ./mvnw clean package -DskipTests
+        run: mvn clean package -DskipTests
 
       - name: Set up QEMU (Para ARM64)
         uses: docker/setup-qemu-action@v3
