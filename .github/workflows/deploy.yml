@@ -2,7 +2,7 @@ name: Deploy Backend
 
 on:
   push:
-    branches: [ "main" ] # Dispara quando você dá push na main
+    branches: [ "main" ]
 
 jobs:
   build-and-push:
@@ -14,12 +14,13 @@ jobs:
       - name: Configurar Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21' # Ajuste para a sua versão (17, 21...)
+          java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
 
+      # Mudamos de ./mvnw para apenas mvn
       - name: Build do JAR
-        run: ./mvnw clean package -DskipTests
+        run: mvn clean package -DskipTests
 
       - name: Set up QEMU (Para ARM64)
         uses: docker/setup-qemu-action@v3
