@@ -18,11 +18,10 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Mudamos de ./mvnw para apenas mvn
       - name: Build do JAR
         run: mvn clean package -DskipTests
 
-      - name: Set up QEMU (Para ARM64)
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -56,6 +55,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /projects/portifolio
+            git pull origin main
             docker compose pull backend
-            docker compose up -d backend
+            docker compose up -d --force-recreate backend
             docker image prune -f
