@@ -35,30 +35,44 @@ public class LabServices {
 
     @Transactional
     public void receiveContact(SendCodeDto dto) {
-        // 1. CORREÇÃO: Validação defensiva para evitar NullPointerException
         if (dto == null || dto.destination() == null || dto.destination().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Destino inválido.");
         }
 
+        // --- UNIFICAÇÃO DA FORMATAÇÃO ---
+        String processedDestination = dto.destination();
+        if (!dto.destination().contains("@")) {
+            processedDestination = dto.destination().replaceAll("\\D", "");
+            if (processedDestination.length() <= 11) {
+                processedDestination = "55" + processedDestination;
+            }
+        }
+
         String code = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 999999));
 
-        // Limpa códigos anteriores para o mesmo destino
-        validationRepository.deleteByDestination(dto.destination());
+        // Limpa códigos anteriores usando o destino formatado
+        validationRepository.deleteByDestination(processedDestination);
 
-        ValidationEntityDto validationEntityDto = new ValidationEntityDto(dto.destination(), code);
+        // Salva no banco com o destino formatado (ex: 55...)
+        ValidationEntityDto validationEntityDto = new ValidationEntityDto(processedDestination, code);
         ValidationEntity validationEntity = new ValidationEntity(validationEntityDto);
         validationRepository.save(validationEntity);
 
-        metricsService.incrementLabAccess(dto.destination());
+        metricsService.incrementLabAccess(processedDestination);
 
         String subject = "Seu Código de Verificação";
         String body = "Olá! Use o código abaixo para acessar o sistema:\n\n " + code;
 
-        // 2. Lógica de envio
-        if (dto.destination().contains("@")) {
-            emailService.send(dto.destination(), subject, body);
-        } else {
-            smsService.send(dto.destination(), subject, body);
+        try {
+            if (dto.destination().contains("@")) {
+                emailService.send(processedDestination, subject, body);
+            } else {
+                // Envia o SMS com o número que já está formatado com 55
+                smsService.send(processedDestination, subject, body);
+            }
+        } catch (Exception e) {
+            System.err.println("Erro crítico no envio: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Falha ao enviar o código.");
         }
     }
 
@@ -66,19 +80,28 @@ public class LabServices {
     public boolean validateCode(String destination, String userCode) {
         if (destination == null || userCode == null) return false;
 
-        Optional<ValidationEntity> optionalEntity = validationRepository.findByDestination(destination);
+        String processedDestination = destination;
+        if (!destination.contains("@")) {
+            processedDestination = destination.replaceAll("\\D", "");
+            if (processedDestination.length() <= 11) {
+                processedDestination = "55" + processedDestination;
+            }
+        }
+
+        // Agora a busca funciona pois ambos (save e find) usam o "55"
+        Optional<ValidationEntity> optionalEntity = validationRepository.findByDestination(processedDestination);
 
         if (optionalEntity.isPresent()) {
             ValidationEntity entity = optionalEntity.get();
             LocalDateTime expireAt = entity.getCreatedAt().plusMinutes(5);
 
             if (LocalDateTime.now().isAfter(expireAt)) {
-                validationRepository.deleteByDestination(destination);
+                validationRepository.deleteByDestination(processedDestination);
                 return false;
             }
 
             if (entity.getCode().equals(userCode)) {
-                validationRepository.deleteByDestination(destination);
+                validationRepository.deleteByDestination(processedDestination);
                 return true;
             }
         }
@@ -94,17 +117,14 @@ public class LabServices {
         String destination = dto.destination();
         LocalDateTime agora = LocalDateTime.now();
 
-        // 3. CORREÇÃO: Verificação de Rate Limit
         if (rateLimitCache.containsKey(destination)) {
             LocalDateTime ultimaVez = rateLimitCache.get(destination);
             if (ultimaVez.plusSeconds(30).isAfter(agora)) {
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Aguarde 30 segundos para um novo envio.");
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Aguarde 30 segundos.");
             }
         }
 
-        // 4. ATUALIZAÇÃO: Registrar o momento do envio no cache
         rateLimitCache.put(destination, agora);
-
         metricsService.incrementApiTest(destination);
 
         String htmlContent = templateService.generateTemplate("Visitante");
@@ -113,7 +133,7 @@ public class LabServices {
         emailService.send(destination, subject, htmlContent);
     }
 
-    @Scheduled(fixedRate = 3600000) // 1 hora
+    @Scheduled(fixedRate = 3600000)
     public void cleanRateLimitCache() {
         LocalDateTime limiteSuperior = LocalDateTime.now().minusMinutes(5);
         rateLimitCache.entrySet().removeIf(entry -> entry.getValue().isBefore(limiteSuperior));
