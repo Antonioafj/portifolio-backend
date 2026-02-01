@@ -55,7 +55,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /projects/portifolio
-            git pull origin main
+            # Força a atualização do docker-compose.yml ignorando conflitos locais
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Atualiza e recria apenas o container do backend
             docker compose pull backend
             docker compose up -d --force-recreate backend
+            
+            # Limpa imagens órfãs para poupar espaço
             docker image prune -f
