@@ -4,6 +4,9 @@ package dev.antonio.portifolio.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -11,15 +14,40 @@ public class AdminNotificationService {
 
     private final DiscordService discordService;
     private final EmailService emailService;
+    private final RestTemplate restTemplate;
 
     private final String MEU_EMAIL = "antonioafj.edu@gmail.com";
 
     @Async
-    public void notifyCvDownload() {
+    public void notifyCvDownload(String ip) {
+        String localizacao = buscarLocalidade(ip);
 
-        discordService.sendDownloadNotification("📄 **Download de CV:** Alguém baixou seu currículo agora!");
+        discordService.sendDownloadNotification(
+                "📄 **Download de CV:** Alguém **" + localizacao +"** baixou seu currículo agora!"
+        );
 
-        emailService.send(MEU_EMAIL, "LOG: Download de Currículo", "Um visitante clicou no botão de download do PDF.");
+        emailService.send(MEU_EMAIL, "LOG: Download de Currículo",
+                "Um visitante de " + localizacao+ " clicou no botão de download do PDF.");
+    }
+
+    private String buscarLocalidade(String ip) {
+        if (ip.equals("0:0:0:0:0:0:0:1") || ip.equals("127.0.0.1")) {
+            return "Desencolvimento (Localhost)";
+        }
+        try {
+            String url = "http://ip=api.com/json/" + ip;
+            Map<String, Object> response = restTemplate.getForObject(url, Map.class);
+
+            if (response != null && "sucess".equals(response.get("status"))) {
+                return  String.format("%s, %s - %s",
+                        response.get("city"),
+                        response.get("regionName"),
+                        response.get("country"));
+            }
+        }catch (Exception e) {
+            return "Localização Indisponivek(IP: " + ip +  ")";
+        }
+        return "Desconhecido";
     }
 
     @Async

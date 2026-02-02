@@ -29,10 +29,10 @@ public class SystemMetricsService {
     }
 
     @Transactional
-    public void incementCvDownload() {
+    public void incementCvDownload(String ip) {
         checkAndInitialize();
         metricsRepository.incrementCvDownload();
-        adminNotification.notifyCvDownload();
+        adminNotification.notifyCvDownload(ip);
     }
 
     @Transactional
