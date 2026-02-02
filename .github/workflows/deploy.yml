@@ -50,18 +50,24 @@ jobs:
       - name: Atualizar Servidor via SSH
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_IP }}
+          # Usando a mesma estrutura de Proxy do Frontend para alcançar o IP privado
+          host: ${{ secrets.PORTFOLIO_PRIVATE_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          proxy_host: ${{ secrets.SERVER_IP }}
+          proxy_username: ${{ secrets.SERVER_USER }}
+          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /projects/portifolio
-            # Força a atualização do docker-compose.yml ignorando conflitos locais
+            # Ajustado para o caminho correto conforme o frontend
+            cd ~/projects/portifolio
+            
+            # Sincroniza o repositório para garantir que o docker-compose.yml esteja atualizado
             git fetch origin main
             git reset --hard origin/main
             
-            # Atualiza e recria apenas o container do backend
+            # Atualiza e recria o container do backend
             docker compose pull backend
             docker compose up -d --force-recreate backend
             
-            # Limpa imagens órfãs para poupar espaço
+            # Limpeza de imagens antigas
             docker image prune -f
