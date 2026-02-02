@@ -23,31 +23,35 @@ public class AdminNotificationService {
         String localizacao = buscarLocalidade(ip);
 
         discordService.sendDownloadNotification(
-                "📄 **Download de CV:** Alguém **" + localizacao +"** baixou seu currículo agora!"
+                "📄 **Download de CV:** Alguém de **" + localizacao + "** baixou seu currículo agora!"
         );
 
         emailService.send(MEU_EMAIL, "LOG: Download de Currículo",
-                "Um visitante de " + localizacao+ " clicou no botão de download do PDF.");
+                "Um visitante de " + localizacao + " clicou no botão de download do PDF.");
     }
 
     private String buscarLocalidade(String ip) {
-        if (ip.equals("0:0:0:0:0:0:0:1") || ip.equals("127.0.0.1")) {
-            return "Desencolvimento (Localhost)";
+        // Verifica se é IP local ou se o IP veio da rede interna do Docker (172.x)
+        if (ip == null || ip.equals("0:0:0:0:0:0:0:1") || ip.equals("127.0.0.1") || ip.startsWith("172.")) {
+            return "Ambiente Interno/Localhost";
         }
+
         try {
-            String url = "http://ip=api.com/json/" + ip;
+            // Removi o "demo." pois o ip-api padrão aceita requisições HTTP/HTTPS normalmente
+            String url = "http://ip-api.com/json/" + ip + "?fields=status,city,regionName,country";
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);
 
-            if (response != null && "sucess".equals(response.get("status"))) {
-                return  String.format("%s, %s - %s",
+            // CORREÇÃO: O status correto retornado pela API é "success" (com dois 'c' e dois 's')
+            if (response != null && "success".equals(response.get("status"))) {
+                return String.format("%s, %s - %s",
                         response.get("city"),
                         response.get("regionName"),
                         response.get("country"));
             }
-        }catch (Exception e) {
-            return "Localização Indisponivek(IP: " + ip +  ")";
+        } catch (Exception e) {
+            return "Localização Indisponível (IP: " + ip + ")";
         }
-        return "Desconhecido";
+        return "Localização Desconhecida";
     }
 
     @Async

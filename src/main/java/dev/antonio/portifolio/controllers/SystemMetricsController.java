@@ -18,17 +18,23 @@ public class SystemMetricsController {
     private final SystemMetricsService metricsService;
 
     @PostMapping("/cv-download")
-    public ResponseEntity<Void> registerDownload(HttpServletRequest request) {
+    public ResponseEntity<Void> registerDownload(jakarta.servlet.http.HttpServletRequest request) {
+        // Tenta pegar o IP real repassado pelo Proxy/Nginx
+        String ipOriginal = request.getHeader("X-Forwarded-For");
 
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty()) {
-            ip = request.getRemoteAddr();
+        if (ipOriginal != null && !ipOriginal.isEmpty()) {
+            // Se houver múltiplos IPs, o primeiro é sempre o do cliente real
+            ipOriginal = ipOriginal.split(",")[0].trim();
+        } else {
+            // Se não houver Header, usa o IP da conexão direta
+            ipOriginal = request.getRemoteAddr();
         }
 
-        metricsService.incementCvDownload(ip);
+        metricsService.incementCvDownload(ipOriginal);
         return ResponseEntity.ok().build();
     }
 
+    
     @GetMapping("/stats")
     public ResponseEntity<SystemMetricsEntity> getStats() {
         return ResponseEntity.ok(metricsService.getStats());
