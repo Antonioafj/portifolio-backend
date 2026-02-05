@@ -63,12 +63,16 @@ graph TD
 
 ---
 
+> ⚠️ O envio de código via SMS está restrito ao ambiente de testes, pois o serviço Twilio está em modo *trial*.
+
+
+---
 ## 🔐 Monitoramento e Verificação
 
 ### Código de Verificação (Email / SMS)
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/5ecba2d1-820b-4df8-b2ec-0146477e259a" width="260" />
+  <img src="https://github.com/user-attachments/assets/7910e8cf-6bca-4bcb-a2d6-1c4e80965a76" width="260" />
   <img src="https://github.com/user-attachments/assets/b53b2f45-7657-42e7-8ff0-db7f90143120" width="260" />
 </p>
 
