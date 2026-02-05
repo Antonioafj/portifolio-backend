@@ -1,9 +1,26 @@
-## Backend Java - Portfolio Lab API - Spring Boot & Cloud Infrastructure.
+## Backend Java - Portfolio Lab API  
+### Spring Boot & Cloud Infrastructure
 
 ### Esta API é responsável por autenticação via código temporário, métricas de uso do sistema e integração com serviços externos como e-mail, SMS e Discord.
-Utilizada no modo laboratório do site de portfólio para validar acesso, testar endpoints e monitorar metricas e interações reais de usuários que interagiem com o laboratório.
 
-**O Diagrama:** Fluxo No Backend .
+Utilizada no **Modo Laboratório** do site de portfólio para validar acesso, testar endpoints e monitorar métricas e interações reais de usuários que interajam com o laboratório.
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Em%20Produ%C3%A7%C3%A3o-blue" />
+  <img src="https://img.shields.io/badge/Frontend-Angular-DD0031" />
+  <img src="https://img.shields.io/badge/Backend-Java%20%7C%20Spring-6DB33F" />
+  <img src="https://img.shields.io/badge/Auth-JWT-orange" />
+  <img src="https://img.shields.io/badge/Infra-Docker%20%7C%20Nginx-2496ED" />
+  <img src="https://img.shields.io/badge/Cloud-OCI-red" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/Antonioafj/portifolio-frontend?style=social" />
+</p>
+
+---
+
+## 🧠 Diagrama — Fluxo do Backend
 
 ```mermaid
 graph TD
@@ -33,34 +50,99 @@ graph TD
     end
 ```
 
-## Como funciona :
-- É gerado um codigo de 6 digitos e enviado para o email se for digitado email, ou sms caso seja telefone celular
-- Assim que é digitado o codigo e confirmado uma nova janela é aberta
-- Com codigo jwt que o usuario conseguiu ao validar o código OTP ele pode fazer um teste de template - tem permissão.
+---
 
-## 🛠️ Minotoramenteo e verificação:
-    ### Seu Código de Verificação - Email / sms
+## 🛣️ Endpoints da API
 
-![twilio_cod](https://github.com/user-attachments/assets/5ecba2d1-820b-4df8-b2ec-0146477e259a)
+| Endpoint | Método | Proteção | Função |
+|--------|--------|----------|--------|
+| `/cv-download` | `POST` | Público | Registra download do currículo e captura IP real via `X-Forwarded-For`. |
+| `/send-code` | `POST` | Público | Dispara código OTP via SMS (Twilio) ou E-mail. |
+| `/verify-code` | `POST` | Público | Valida código OTP e retorna JWT. |
+| `/test-template` | `POST` | JWT | Endpoint protegido para testes no Modo Laboratório. |
 
-<img width="524" height="420" alt="email_cod" src="https://github.com/user-attachments/assets/b53b2f45-7657-42e7-8ff0-db7f90143120" />
+---
 
-    ### Notficações de acesso.
-    - Email
+## 🔐 Monitoramento e Verificação
 
-<img width="671" height="425" alt="email_monitor_acess_lab" src="https://github.com/user-attachments/assets/ef2f227d-7eb6-4cd9-8482-e91e65214f4f" />
-<img width="623" height="441" alt="email_monitor_test_template" src="https://github.com/user-attachments/assets/b3f421fa-023e-4665-bae7-3e70158a9516" />
-<img width="679" height="436" alt="email_monitor_down_curriculo" src="https://github.com/user-attachments/assets/470f33bf-6b93-48f6-8288-c2d90cd7c040" />
+### Código de Verificação (Email / SMS)
 
-    - Discord
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/5ecba2d1-820b-4df8-b2ec-0146477e259a" width="260" />
+  <img src="https://github.com/user-attachments/assets/b53b2f45-7657-42e7-8ff0-db7f90143120" width="260" />
+</p>
 
-<img width="644" height="91" alt="discord_monitor_acess_lab" src="https://github.com/user-attachments/assets/7ac56146-3730-433c-9e84-b485eebf09bf" />
-<img width="790" height="98" alt="discord_monitor_test_template" src="https://github.com/user-attachments/assets/98f1fa1f-934f-4ed4-819f-5ce58e8041a2" />
-<img width="777" height="100" alt="discord_monitor_down_curriculo" src="https://github.com/user-attachments/assets/25137d92-aee2-4790-8157-e98305f520b1" />
+---
 
+### Notificações de Acesso — Email
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ef2f227d-7eb6-4cd9-8482-e91e65214f4f" width="260" />
+  <img src="https://github.com/user-attachments/assets/b3f421fa-023e-4665-bae7-3e70158a9516" width="260" />
+  <img src="https://github.com/user-attachments/assets/470f33bf-6b93-48f6-8288-c2d90cd7c040" width="260" />
+</p>
+
+---
+
+### Notificações de Acesso — Discord
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/7ac56146-3730-433c-9e84-b485eebf09bf" width="260" />
+  <img src="https://github.com/user-attachments/assets/98f1fa1f-934f-4ed4-819f-5ce58e8041a2" width="260" />
+  <img src="https://github.com/user-attachments/assets/25137d92-aee2-4790-8157-e98305f520b1" width="260" />
+</p>
+
+---
+
+## 🔒 Segurança Aplicada
+
+- Autenticação baseada em **OTP com tempo de expiração**
+- Emissão de **JWT assinado**
+- Separação clara entre **endpoints públicos e protegidos**
+- Captura de IP real via **Proxy Reverso (Nginx)**
+- Bloqueio de acesso ao Modo Laboratório sem token válido
+
+---
+
+## 🌍 Localização por IP
+
+A partir do IP real capturado via proxy reverso, a API consulta:
+
+- http://ip-api.com/json/
+
+Para obtenção de localização aproximada do usuário.
+
+---
+
+## ▶️ Executando Localmente (Docker)
+
+```bash
+docker compose up -d
+```
+
+Pré-requisitos:
+- Docker
+- Docker Compose
+
+---
 
 ## 🛠️ Tecnologias Utilizadas
 
 ![Skills](https://skillicons.dev/icons?i=java,spring,postgres,docker,githubactions,nginx,ubuntu,idea,vscode)
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                z
+---
+
+## 🧭 Roadmap
+
+- Rate limit por IP no fluxo OTP
+- Cache de métricas
+- Dashboard interno para visualização de métricas
+- Integração com observabilidade (ex: Prometheus)
+
+---
+
+## 🔗 Link do Site
+
+👉 <a href="https://antonioafj.dev/" target="_blank" rel="noopener noreferrer">
+https://antonioafj.dev/
+</a>
