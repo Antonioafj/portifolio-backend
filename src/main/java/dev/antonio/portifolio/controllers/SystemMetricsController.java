@@ -17,26 +17,39 @@ public class SystemMetricsController {
 
     private final SystemMetricsService metricsService;
 
+    /**
+     * Registra o evento de download do currículo.
+     * Tenta identificar o endereço IP do usuário para métricas geográficas ou de auditoria.
+     */
     @PostMapping("/cv-download")
     public ResponseEntity<Void> registerDownload(jakarta.servlet.http.HttpServletRequest request) {
-        // Tenta pegar o IP real repassado pelo Proxy/Nginx
+
+        // --- LÓGICA DE CAPTURA DE IP ---
+        // Em servidores reais (Nginx, Heroku, AWS), o IP do cliente vem no Header "X-Forwarded-For"
+        // porque o servidor age como um proxy.
         String ipOriginal = request.getHeader("X-Forwarded-For");
 
         if (ipOriginal != null && !ipOriginal.isEmpty()) {
-            // Se houver múltiplos IPs, o primeiro é sempre o do cliente real
+            // Se houver uma lista de IPs (ex: "IP_Cliente, IP_Proxy1"), pegamos o primeiro da esquerda.
             ipOriginal = ipOriginal.split(",")[0].trim();
         } else {
-            // Se não houver Header, usa o IP da conexão direta
+            // Caso não exista o header (ambiente local ou conexão direta), pega o IP direto da requisição.
             ipOriginal = request.getRemoteAddr();
         }
 
+        // Incrementa o contador de downloads no serviço de métricas associando ao IP
         metricsService.incementCvDownload(ipOriginal);
+
         return ResponseEntity.ok().build();
     }
 
-    
+    /**
+     * Retorna os dados estatísticos acumulados (total de acessos, downloads, etc).
+     * Rota: GET /api/v1/metrics/stats
+     */
     @GetMapping("/stats")
     public ResponseEntity<SystemMetricsEntity> getStats() {
+        // Busca a entidade de métricas no banco de dados através do serviço
         return ResponseEntity.ok(metricsService.getStats());
     }
 }
